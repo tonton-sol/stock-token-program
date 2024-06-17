@@ -64,3 +64,83 @@ pub fn is_market_open(time_stamp: i64) -> bool {
 
     is_weekday_and_time_between_9_30_and_16_et(ny_datetime)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{FixedOffset, TimeZone, Utc};
+
+    fn convert_et_to_utc(year: i32, month: u32, day: u32, hour: u32, minute: u32) -> DateTime<Utc> {
+        let offset_hours = if is_daylight_saving_time(
+            Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
+                .unwrap(),
+        ) {
+            -4
+        } else {
+            -5
+        };
+        let et = FixedOffset::east_opt(offset_hours * 3600).unwrap();
+        et.with_ymd_and_hms(year, month, day, hour, minute, 0)
+            .unwrap()
+            .with_timezone(&Utc)
+    }
+
+    #[test]
+    fn test_is_daylight_saving_time() {
+        let dt = convert_et_to_utc(2023, 3, 12, 8, 0);
+        assert!(is_daylight_saving_time(dt));
+
+        let dt = convert_et_to_utc(2023, 11, 5, 7, 0);
+        assert!(!is_daylight_saving_time(dt));
+    }
+
+    #[test]
+    fn test_convert_utc_to_et() {
+        let dt = Utc.with_ymd_and_hms(2023, 6, 1, 12, 0, 0).unwrap();
+        let et_dt = convert_utc_to_et(dt);
+        assert_eq!(et_dt.hour(), 8);
+
+        let dt = Utc.with_ymd_and_hms(2023, 12, 1, 12, 0, 0).unwrap();
+        let et_dt = convert_utc_to_et(dt);
+        assert_eq!(et_dt.hour(), 7);
+    }
+
+    #[test]
+    fn test_find_nth_weekday_in_month() {
+        let day = find_nth_weekday_in_month(2023, 11, Weekday::Thu, 4);
+        assert_eq!(day, 23);
+
+        let day = find_nth_weekday_in_month(2023, 1, Weekday::Mon, 3);
+        assert_eq!(day, 16);
+    }
+
+    #[test]
+    fn test_is_weekday_and_time_between_9_30_and_16_et() {
+        let dt = convert_et_to_utc(2023, 6, 1, 10, 0);
+        let et_dt = convert_utc_to_et(dt);
+        assert!(is_weekday_and_time_between_9_30_and_16_et(et_dt));
+
+        let dt = convert_et_to_utc(2023, 6, 1, 9, 0);
+        let et_dt = convert_utc_to_et(dt);
+        assert!(!is_weekday_and_time_between_9_30_and_16_et(et_dt));
+
+        let dt = convert_et_to_utc(2023, 6, 3, 10, 0);
+        let et_dt = convert_utc_to_et(dt);
+        assert!(!is_weekday_and_time_between_9_30_and_16_et(et_dt));
+    }
+
+    #[test]
+    fn test_is_market_open() {
+        let dt = convert_et_to_utc(2023, 6, 1, 14, 0).timestamp();
+        assert!(is_market_open(dt));
+
+        let dt = convert_et_to_utc(2023, 6, 1, 6, 0).timestamp();
+        assert!(!is_market_open(dt));
+
+        let dt = convert_et_to_utc(2023, 12, 25, 14, 0).timestamp();
+        assert!(!is_market_open(dt));
+
+        let dt = convert_et_to_utc(2023, 6, 3, 14, 0).timestamp();
+        assert!(!is_market_open(dt));
+    }
+}

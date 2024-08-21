@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Solana program facilitates secure and regulated token transfers by enforcing a custom transfer-hook. It ensures token transfers occur only during market hours and validates the state of token accounts before processing transfers. The program also manages additional account metadata necessary for these operations.
+This is a proof of concept transfer-hook program that exibits the power of token extensions for interesting mechanics. It ensures token transfers occur only during market hours and validates the state of token accounts before processing transfers. The program also manages additional account metadata necessary for these operations.
 
 ### Key Functions
 
